@@ -1,27 +1,29 @@
-# 📄 RAG Document Assistant
+# RAG Document Assistant
 
-> Upload your PDF documents and ask questions about them in plain English — powered by **Claude** and **LangChain**, with answers that cite the exact source and page number.
+> Upload your PDF documents and have a conversation with them. Powered by **Claude** and **LangChain**, with answers that cite the exact source and page number.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python&logoColor=white)
-![LangChain](https://img.shields.io/badge/LangChain-1.2-green?logo=chainlink&logoColor=white)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5-purple?logo=databricks&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-teal?logo=fastapi&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-0.3+-green?logo=chainlink&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5+-purple?logo=databricks&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Sonnet_4.6-orange?logo=anthropic&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ---
 
-<!-- Replace the line below with your actual GIF once recorded -->
+<!-- Replace the line below with your actual screenshot or GIF once recorded -->
 ![Demo](demo.gif)
 
 ---
 
 ## Features
 
-- **Upload multiple PDFs** — index as many documents as you need
-- **Ask in plain English** — no special syntax required
-- **Source references** — every answer cites the document name and page number
-- **Persistent storage** — documents are remembered between sessions via ChromaDB
-- **Local embeddings** — no extra API key needed for embedding
+- **Conversation history** saved automatically in SQLite, persisted across sessions
+- **Documents scoped per chat** so files uploaded in one conversation never affect another
+- **Search and Summarize modes**: switch between targeted fact retrieval and full document summarization
+- **Semantic search** using local embeddings, no extra API key needed
+- **Source references** on every answer, with document name and page number
+- **Streaming responses** from Claude, shown token by token in the browser
 
 ---
 
@@ -30,35 +32,32 @@
 | Layer | Technology |
 |---|---|
 | LLM | [Claude Sonnet 4.6](https://www.anthropic.com/) (Anthropic) |
+| Web framework | [FastAPI](https://fastapi.tiangolo.com/) + Uvicorn |
 | RAG framework | [LangChain](https://www.langchain.com/) |
 | Vector database | [ChromaDB](https://www.trychroma.com/) (persisted locally) |
 | Embeddings | [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) (runs locally) |
+| Conversation storage | SQLite via the Python standard library |
 | PDF parsing | [PyPDF](https://pypdf.readthedocs.io/) |
+| Frontend animations | [GSAP](https://gsap.com/) with ScrollTrigger |
 
 ---
 
 ## How It Works
 
 ```
-PDF file
-    │
-    ▼
-PyPDFLoader — extract text per page
-    │
-    ▼
-RecursiveCharacterTextSplitter — split into overlapping chunks
-    │
-    ▼
-all-MiniLM-L6-v2 — embed each chunk locally
-    │
-    ▼
-ChromaDB — persist embeddings to disk
-    │
-    ▼
-User question → retrieve top-4 relevant chunks
-    │
-    ▼
-Claude Opus 4.6 — generate answer with source references
+PDF upload
+    ↓
+PyPDFLoader extracts text per page
+    ↓
+RecursiveCharacterTextSplitter splits into overlapping chunks
+    ↓
+all-MiniLM-L6-v2 embeds each chunk locally
+    ↓
+ChromaDB stores embeddings tagged with the conversation ID
+    ↓
+User question → top k chunks retrieved (k=20 in Search, k=100 in Summarize)
+    ↓
+Claude Sonnet 4.6 generates an answer with source citations, streamed to the browser
 ```
 
 ---
@@ -97,40 +96,20 @@ ANTHROPIC_API_KEY=your_api_key_here
 ### Run
 
 ```bash
-python main.py
+uvicorn server:app --reload
 ```
+
+Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ---
 
 ## Usage
 
-| Command | Description |
-|---|---|
-| `upload <path>` | Index a PDF file |
-| `ask <question>` | Ask a question across all indexed documents |
-| `list` | Show all indexed documents |
-| `quit` | Exit |
-
-### Example session
-
-```
-> upload reports/annual_report.pdf
-Indexed 124 chunks from 'annual_report.pdf'.
-
-> ask What was the total revenue in 2023?
-Total revenue in 2023 was $4.2 billion, representing a 12% increase from the prior year.
-
-Sources:
-  • annual_report.pdf, page 8
-  • annual_report.pdf, page 23
-
-> list
-Indexed documents:
-  • annual_report.pdf
-
-> quit
-Goodbye!
-```
+1. Click **New chat** in the sidebar to start a fresh conversation
+2. Click the **+** button next to the input field to upload a PDF
+3. Switch between **Search** and **Summarize** mode depending on what you need
+4. Ask questions in plain language and get answers with page references
+5. Previous conversations are listed in the sidebar and can be resumed at any time
 
 ---
 
@@ -138,11 +117,16 @@ Goodbye!
 
 ```
 rag-document-agent/
-├── rag_agent.py      # Core RAG logic (RAGAgent class)
-├── main.py           # Interactive CLI
+├── rag_agent.py        # Core RAG logic (RAGAgent class)
+├── server.py           # FastAPI server and REST endpoints
+├── static/
+│   ├── index.html      # Web interface
+│   ├── style.css       # Styles
+│   └── script.js       # Frontend logic and GSAP animations
 ├── requirements.txt
 ├── .env.example
-└── chroma_db/        # Vector database (created on first upload, gitignored)
+├── chroma_db/          # Vector database (gitignored, created on first upload)
+└── conversations.db    # SQLite database (gitignored, created on first run)
 ```
 
 ---
@@ -153,24 +137,24 @@ Key constants in `rag_agent.py`:
 
 | Constant | Default | Description |
 |---|---|---|
-| `PERSIST_DIR` | `./chroma_db` | Where ChromaDB stores data |
+| `PERSIST_DIR` | `./chroma_db` | Where ChromaDB stores embeddings |
 | `EMBED_MODEL` | `all-MiniLM-L6-v2` | Local embedding model |
 | `chunk_size` | `1000` | Characters per chunk |
 | `chunk_overlap` | `200` | Overlap between chunks |
-| `k` (in `query`) | `4` | Number of chunks retrieved per query |
 
-The Claude model can be swapped when instantiating `RAGAgent`:
+Chunks retrieved per query in `server.py`:
 
-```python
-agent = RAGAgent(model="claude-sonnet-4-6")
-```
+| Mode | k | Best for |
+|---|---|---|
+| Search | 20 | Specific questions and fact lookup |
+| Summarize | 100 | Overviews and chapter summaries |
 
 ---
 
 ## Notes
 
-- The embedding model (~90 MB) is downloaded from HuggingFace on first run and cached locally — subsequent runs are instant
-- On macOS, grant your terminal access to folders via `System Settings → Privacy & Security → Files and Folders` if you get permission errors when uploading
+- The embedding model (~90 MB) is downloaded from HuggingFace on first run and cached locally
+- On macOS, grant your terminal access to folders via `System Settings → Privacy & Security → Files and Folders` if you get permission errors when uploading PDFs
 
 ---
 
