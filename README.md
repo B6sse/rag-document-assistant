@@ -95,15 +95,25 @@ ANTHROPIC_API_KEY=your_api_key_here
 
 ### Run
 
+**Web interface**
+
 ```bash
 uvicorn server:app --reload
 ```
 
 Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
+**Terminal (CLI)**
+
+```bash
+python main.py
+```
+
 ---
 
 ## Usage
+
+### Web interface
 
 1. Click **New chat** in the sidebar to start a fresh conversation
 2. Click the **+** button next to the input field to upload a PDF
@@ -111,23 +121,45 @@ Then open [http://localhost:8000](http://localhost:8000) in your browser.
 4. Ask questions in plain language and get answers with page references
 5. Previous conversations are listed in the sidebar and can be resumed at any time
 
----
-
-## Project Structure
+### CLI
 
 ```
-rag-document-agent/
-├── rag_agent.py        # Core RAG logic (RAGAgent class)
-├── server.py           # FastAPI server and REST endpoints
-├── static/
-│   ├── index.html      # Web interface
-│   ├── style.css       # Styles
-│   └── script.js       # Frontend logic and GSAP animations
-├── requirements.txt
-├── .env.example
-├── chroma_db/          # Vector database (gitignored, created on first upload)
-└── conversations.db    # SQLite database (gitignored, created on first run)
+> upload path/to/document.pdf
+[Indexed 87 chunks from 'document.pdf'.]
+
+> ask What are the main conclusions?
+[Searching documents...]
+[Generating answer...]
+The main conclusions are ...
+
+Sources:
+  * document.pdf, page 12
+  * document.pdf, page 34
+
+> summarize Give me an overview of the whole document
+[Searching documents...]
+[Generating answer...]
+...
+
+> list
+Indexed documents:
+  * document.pdf
+
+> remove document.pdf
+Removed 87 chunks for 'document.pdf'.
+
+> quit
+Goodbye!
 ```
+
+| Command | Description |
+|---|---|
+| `upload <path>` | Index a PDF file |
+| `ask <question>` | Search with targeted retrieval (k=20) |
+| `summarize <question>` | Query with full document coverage (k=100) |
+| `list` | Show all indexed documents |
+| `remove <filename>` | Remove a document and its embeddings |
+| `quit` | Exit |
 
 ---
 

@@ -235,6 +235,39 @@ async function askQuestion() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div>';
 
+  // Smooth typewriter: drain a queue at ~30 chars/frame via rAF
+  let textQueue = '';
+  let rafId = null;
+
+  function drainQueue() {
+    if (textQueue.length === 0) { rafId = null; return; }
+    const chunk = textQueue.slice(0, 6);
+    textQueue   = textQueue.slice(6);
+    textEl.textContent += chunk;
+    scrollToBottom();
+    rafId = requestAnimationFrame(drainQueue);
+  }
+
+  function enqueue(text) {
+    textQueue += text;
+    if (!rafId) rafId = requestAnimationFrame(drainQueue);
+  }
+
+  async function flushQueue() {
+    return new Promise(resolve => {
+      function flush() {
+        if (textQueue.length === 0) { rafId = null; resolve(); return; }
+        const chunk = textQueue.slice(0, 6);
+        textQueue   = textQueue.slice(6);
+        textEl.textContent += chunk;
+        scrollToBottom();
+        rafId = requestAnimationFrame(flush);
+      }
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(flush);
+    });
+  }
+
   try {
     const res = await fetch('/ask', {
       method: 'POST',
@@ -267,14 +300,15 @@ async function askQuestion() {
           }
 
         } else if (event.type === 'chunk') {
-          textEl.textContent += event.text;
-          scrollToBottom();
+          enqueue(event.text);
 
         } else if (event.type === 'done') {
+          await flushQueue();
           renderSources(event.sources, assistantBubble);
           scrollToBottom();
 
         } else if (event.type === 'error') {
+          await flushQueue();
           textEl.textContent = event.message;
           scrollToBottom();
         }
@@ -317,22 +351,22 @@ function addMessage(role, text) {
 function renderSources(sources, messageEl) {
   if (!sources || sources.length === 0) return;
 
-  const sourcesDiv = document.createElement('div');
-  sourcesDiv.className = 'message-sources';
+  const details = document.createElement('details');
+  details.className = 'message-sources';
 
-  const label = document.createElement('div');
-  label.className = 'sources-label';
-  label.textContent = 'Sources';
-  sourcesDiv.appendChild(label);
+  const summary = document.createElement('summary');
+  summary.className = 'sources-label';
+  summary.textContent = `Sources (${sources.length})`;
+  details.appendChild(summary);
 
   sources.forEach(src => {
     const div = document.createElement('div');
     div.className = 'source-item';
     div.textContent = src;
-    sourcesDiv.appendChild(div);
+    details.appendChild(div);
   });
 
-  messageEl.appendChild(sourcesDiv);
+  messageEl.appendChild(details);
 }
 
 function scrollToBottom() {
@@ -385,52 +419,69 @@ loadConversations();
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Horizontal scroll for feature cards
-window.addEventListener('load', () => {
-  const track = document.querySelector('.features-track');
+// ── Feature card carousel ─────────────────────────────────────────────────
 
-  const horizontalST = gsap.to(track, {
-    x: () => -(track.scrollWidth - window.innerWidth),
-    ease: 'none',
-    scrollTrigger: {
-      trigger: '.features',
-      start: 'top top',
-      end: () => `+=${track.scrollWidth - window.innerWidth}`,
-      scrub: 2,
-      pin: true,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-    },
-  }).scrollTrigger;
+const carouselTrack = document.querySelector('.features-track');
+const carouselCards = Array.from(document.querySelectorAll('.feature-card'));
+const CAROUSEL_GAP  = 20; // px — matches gap: 1.25rem
+const CARDS_VISIBLE = 3.2; // how many cards show at once (rest peek to the right)
+const TOTAL_STEPS   = carouselCards.length - 2; // last step shows final 2 cards
+let carouselStep    = 0;
 
-  // Each card fades and scales in as it scrolls into view
-  gsap.utils.toArray('.feature-card').forEach(card => {
-    gsap.fromTo(card,
-      { opacity: 0, scale: 0.88 },
-      {
-        opacity: 1, scale: 1,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: card,
-          containerAnimation: horizontalST,
-          start: 'left right',
-          end: 'left center',
-          scrub: true,
-        },
-      }
-    );
-  });
+function initCarousel() {
+  // Visible width = from carousel left edge to viewport right edge
+  const carouselEl  = document.querySelector('.features-carousel');
+  const carouselLeft = carouselEl.getBoundingClientRect().left;
+  const visibleWidth = window.innerWidth - carouselLeft;
+  const cardWidth    = (visibleWidth - CAROUSEL_GAP * (CARDS_VISIBLE - 1)) / CARDS_VISIBLE;
+  carouselCards.forEach(card => { card.style.width = cardWidth + 'px'; });
+  goToStep(carouselStep, false);
+}
 
-  ScrollTrigger.refresh();
+function updateCarouselButtons() {
+  document.getElementById('carouselPrev').disabled = carouselStep === 0;
+  document.getElementById('carouselNext').disabled = carouselStep >= TOTAL_STEPS;
+}
+
+function goToStep(step, animate = true) {
+  if (step < 0 || step > TOTAL_STEPS) return;
+  const cardWidth = carouselCards[0].offsetWidth;
+  const offset    = step * (cardWidth + CAROUSEL_GAP);
+
+  if (animate) {
+    gsap.to(carouselTrack, { x: -offset, duration: 0.55, ease: 'power2.inOut' });
+  } else {
+    gsap.set(carouselTrack, { x: -offset });
+  }
+
+  carouselStep = step;
+  updateCarouselButtons();
+}
+
+function carouselPrev() { goToStep(carouselStep - 1); }
+function carouselNext() { goToStep(carouselStep + 1); }
+
+window.addEventListener('load', initCarousel);
+window.addEventListener('resize', initCarousel);
+
+// Section fade-in on scroll
+gsap.from('.features .section-title, .features .section-subtitle', {
+  scrollTrigger: { trigger: '.features', start: 'top 80%' },
+  y: 24, opacity: 0, duration: 0.7, stagger: 0.15, ease: 'power2.out',
 });
 
-// Steps and tech-stack run after the pin spacer is settled
+gsap.from('.features-carousel', {
+  scrollTrigger: { trigger: '.features-carousel', start: 'top 82%' },
+  y: 30, opacity: 0, duration: 0.7, ease: 'power2.out',
+});
+
+// How it works steps
 window.addEventListener('load', () => {
   gsap.utils.toArray('.step').forEach((step, i) => {
     gsap.from(step, {
       scrollTrigger: {
         trigger: step,
-        start: 'top 88%',
+        start: 'top 65%',
         toggleActions: 'play none none reverse',
       },
       x: -30, opacity: 0, duration: 0.6, delay: i * 0.08, ease: 'power2.out',

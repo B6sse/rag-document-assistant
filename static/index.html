@@ -98,42 +98,61 @@
 
   <!-- Features -->
   <section class="features" id="features">
-    <div class="features-header">
+    <div class="section-inner">
       <h2 class="section-title">What it can do</h2>
       <p class="section-subtitle">Upload a PDF and start a conversation with your documents.</p>
-    </div>
-    <div class="features-viewport">
-      <div class="features-track">
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <h3>Conversation history</h3>
-          <p>Every chat is saved automatically. Pick up where you left off or start a new conversation at any time.</p>
+
+      <!-- Carousel starts aligned with header, track bleeds right past section-inner -->
+      <div class="features-carousel">
+        <div class="features-track">
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h3>Conversation history</h3>
+            <p>Every chat is saved automatically. Pick up where you left off or start a new conversation at any time.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Semantic search</h3>
+            <p>Finds relevant passages even when your wording differs from the source text. Embeddings run fully locally so no extra API key is needed.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <h3>Search or summarize</h3>
+            <p>Switch between focused search for specific facts and deep summarization that reads the full document before answering.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📍</div>
+            <h3>Source references</h3>
+            <p>Every answer cites the document and page number so you can verify the information yourself.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <h3>Documents per chat</h3>
+            <p>Each conversation has its own set of documents. Files uploaded in one chat never interfere with another.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>Runs locally</h3>
+            <p>The vector database and embedding model run on your own machine. Only the final question and retrieved text are sent to Claude.</p>
+          </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔍</div>
-          <h3>Semantic search</h3>
-          <p>Finds relevant passages even when your wording differs from the source text. Embeddings run fully locally so no extra API key is needed.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📋</div>
-          <h3>Search or summarize</h3>
-          <p>Switch between focused search for specific facts and deep summarization that reads the full document before answering.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📍</div>
-          <h3>Source references</h3>
-          <p>Every answer cites the document and page number so you can verify the information yourself.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🗂️</div>
-          <h3>Documents per chat</h3>
-          <p>Each conversation has its own set of documents. Files uploaded in one chat never interfere with another.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔒</div>
-          <h3>Runs locally</h3>
-          <p>The vector database and embedding model run on your own machine. Only the final question and retrieved text are sent to Claude.</p>
-        </div>
+      </div>
+
+      <div class="carousel-nav">
+        <button class="carousel-btn" id="carouselPrev" aria-label="Previous" onclick="carouselPrev()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <button class="carousel-btn" id="carouselNext" aria-label="Next" onclick="carouselNext()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
       </div>
     </div>
   </section>
@@ -191,7 +210,7 @@
     <div class="footer-inner">
       <div class="footer-meta">
         <span>Made by <a href="https://github.com/B6sse" target="_blank" rel="noopener">Basse</a></span>
-        <a href="https://github.com/B6sse/rag-document-agent" target="_blank" rel="noopener">View on GitHub</a>
+        <a href="https://github.com/B6sse/rag-document-assistant" target="_blank" rel="noopener">View on GitHub</a>
         <span>Built with Claude &amp; LangChain</span>
       </div>
       <nav class="footer-nav">

@@ -28,7 +28,7 @@ body {
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: 2rem 1rem;
+  padding: 3rem 1rem;
 }
 
 .orb {
@@ -78,7 +78,7 @@ body {
   border-radius: 1.5rem;
   width: 100%;
   max-width: 860px;
-  height: calc(100vh - 4rem);
+  height: calc(100vh - 6rem);
   box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 1;
@@ -349,7 +349,7 @@ h1 {
 
 .message-sources {
   margin-top: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   background: rgba(52, 211, 153, 0.05);
   border: 1px solid rgba(52, 211, 153, 0.12);
   border-radius: 0.5rem;
@@ -363,12 +363,28 @@ h1 {
   letter-spacing: 0.08em;
   font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.25);
-  margin-bottom: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  padding: 0.15rem 0;
+}
+
+.sources-label::-webkit-details-marker { display: none; }
+
+.sources-label::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+details[open] .sources-label::before {
+  transform: rotate(90deg);
 }
 
 .source-item {
   color: var(--accent-1);
   padding: 0.1rem 0;
+  margin-top: 0.2rem;
 }
 
 .source-item::before { content: '• '; opacity: 0.5; }
@@ -518,7 +534,8 @@ textarea:focus { border-color: var(--accent-1); }
   align-items: center;
   gap: 0.5rem;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 1rem;
+  font-weight: 500;
   animation: fade-bounce 2.5s ease-in-out infinite;
   z-index: 1;
 }
@@ -538,9 +555,11 @@ textarea:focus { border-color: var(--accent-1); }
 /* ── Shared section layout ──────────────────────── */
 .features,
 .how-it-works {
-  padding: 7rem 1.5rem;
+  padding: 5rem 1.5rem;
   width: 100%;
 }
+
+.features { overflow: hidden; }
 
 .section-inner {
   max-width: 860px;
@@ -561,55 +580,76 @@ textarea:focus { border-color: var(--accent-1); }
 }
 
 /* ── Features ───────────────────────────────────── */
-.features {
-  padding: 0;
-  overflow: hidden;
-}
-
-.features-header {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 7rem 1.5rem 3rem;
-}
-
-.features-viewport {
-  overflow: hidden;
-  width: 100%;
+.features-carousel {
+  overflow: visible;
+  margin-right: -9999px; /* bleeds track to the right, clipped by section */
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .features-track {
   display: flex;
-  gap: 1.5rem;
-  padding: 0 1.5rem;
-  width: max-content;
+  gap: 1.25rem;
+  will-change: transform;
 }
 
 .feature-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 1.5rem;
-  padding: 3rem 2.5rem;
+  padding: 2.5rem 2rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: border-color 0.3s;
-  width: clamp(300px, 38vw, 440px);
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 
-.feature-card:hover { border-color: rgba(52, 211, 153, 0.3); }
-
-.feature-icon { font-size: 2.8rem; margin-bottom: 1.5rem; }
+.feature-icon { font-size: 2.4rem; margin-bottom: 1.25rem; }
 
 .feature-card h3 {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 
 .feature-card p {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
   line-height: 1.75;
+}
+
+/* ── Carousel arrow buttons ──────────────────────── */
+.carousel-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.5rem;
+}
+
+.carousel-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.carousel-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.carousel-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
 }
 
 /* ── How it works ───────────────────────────────── */
