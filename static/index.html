@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Document Assistant</title>
+  <script>history.scrollRestoration = 'manual'; window.scrollTo(0, 0);</script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="card">
+
+      <!-- Header -->
+      <div class="card-header">
+        <h1>RAG Document Assistant</h1>
+        <p class="subtitle">Powered by Claude &amp; LangChain</p>
+      </div>
+
+      <!-- Body: sidebar + chat -->
+      <div class="card-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+
+          <!-- New conversation button -->
+          <button class="new-chat-btn" id="newChatBtn" onclick="newConversation()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New chat
+          </button>
+
+          <!-- Conversations -->
+          <p class="sidebar-label">Chats</p>
+          <div class="conv-list" id="convList"></div>
+
+          <!-- Documents -->
+          <p class="sidebar-label" style="margin-top:0.5rem">Documents</p>
+          <div class="upload-status" id="uploadStatus"></div>
+          <div class="doc-list" id="docList"></div>
+        </div>
+
+        <!-- Chat -->
+        <div class="chat-area">
+          <div class="messages" id="messages">
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon">💬</div>
+              <p>Upload a PDF and start asking questions</p>
+            </div>
+          </div>
+
+          <!-- Input bar (inside chat area only) -->
+          <div class="card-footer">
+            <div class="error" id="error"></div>
+            <div class="input-row">
+              <input type="file" id="fileInput" accept=".pdf" hidden />
+              <button class="mode-btn" id="modeBtn" title="Switch mode" onclick="toggleMode()">Search</button>
+              <button class="upload-btn" id="uploadBtn" title="Upload PDF">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+              <textarea id="question" placeholder="Ask a question about your documents…" rows="1"></textarea>
+              <button id="askBtn" onclick="askQuestion()" title="Send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="19" x2="12" y2="5"/>
+                  <polyline points="5 12 12 5 19 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="scroll-hint">
+      <span>Scroll to learn more</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="features-header">
+      <h2 class="section-title">What it can do</h2>
+      <p class="section-subtitle">Upload a PDF and start a conversation with your documents.</p>
+    </div>
+    <div class="features-viewport">
+      <div class="features-track">
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Conversation history</h3>
+          <p>Every chat is saved automatically. Pick up where you left off or start a new conversation at any time.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3>Semantic search</h3>
+          <p>Finds relevant passages even when your wording differs from the source text. Embeddings run fully locally so no extra API key is needed.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Search or summarize</h3>
+          <p>Switch between focused search for specific facts and deep summarization that reads the full document before answering.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📍</div>
+          <h3>Source references</h3>
+          <p>Every answer cites the document and page number so you can verify the information yourself.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗂️</div>
+          <h3>Documents per chat</h3>
+          <p>Each conversation has its own set of documents. Files uploaded in one chat never interfere with another.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Runs locally</h3>
+          <p>The vector database and embedding model run on your own machine. Only the final question and retrieved text are sent to Claude.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="section-inner">
+      <h2 class="section-title">How it works</h2>
+      <p class="section-subtitle">From PDF to answer in four steps.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <h3>Upload a PDF</h3>
+            <p>Click the plus button next to the input field and select a PDF. The file is tied to the current conversation so it stays separate from your other chats.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <h3>The document is indexed</h3>
+            <p>The text is split into overlapping chunks and each chunk is converted to a vector using a local embedding model. The vectors are stored in ChromaDB on your machine.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <h3>Your question is matched</h3>
+            <p>When you ask something, the same embedding model converts your question to a vector and retrieves the most relevant chunks from the database. In Summarize mode a larger portion of the document is retrieved to give a fuller picture.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">04</div>
+          <div class="step-content">
+            <h3>Claude writes the answer</h3>
+            <p>The retrieved passages are sent to Claude together with your question. Claude reads the context and returns a precise answer with page references, streamed back to you in real time.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tech-stack">
+        <span class="badge">Python</span>
+        <span class="badge">FastAPI</span>
+        <span class="badge">LangChain</span>
+        <span class="badge">ChromaDB</span>
+        <span class="badge">Claude Sonnet 4.6</span>
+        <span class="badge">all-MiniLM-L6-v2</span>
+        <span class="badge">SQLite</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-meta">
+        <span>Made by <a href="https://github.com/B6sse" target="_blank" rel="noopener">Basse</a></span>
+        <a href="https://github.com/B6sse/rag-document-agent" target="_blank" rel="noopener">View on GitHub</a>
+        <span>Built with Claude &amp; LangChain</span>
+      </div>
+      <nav class="footer-nav">
+        <a href="#hero">Assistant</a>
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="/static/script.js"></script>
+</body>
+</html>
