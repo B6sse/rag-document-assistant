@@ -4,7 +4,9 @@ Interactive CLI for the RAG Document Assistant.
 Commands:
   upload <path/to/file.pdf>   Index a PDF into ChromaDB
   ask <your question>         Query across all indexed documents
+  summarize <your question>   Query with full document coverage (k=100)
   list                        Show indexed documents
+  remove <filename>           Remove a document
   quit / exit                 Exit
 """
 
@@ -13,10 +15,12 @@ from rag_agent import RAGAgent
 
 def print_help() -> None:
     print("Commands:")
-    print("  upload <path>   — index a PDF")
-    print("  ask <question>  — query indexed documents")
-    print("  list            — show indexed documents")
-    print("  quit            — exit")
+    print("  upload <path>        index a PDF")
+    print("  ask <question>       search indexed documents")
+    print("  summarize <question> summarize with full document coverage")
+    print("  list                 show indexed documents")
+    print("  remove <filename>    remove a document")
+    print("  quit                 exit")
 
 
 def main() -> None:
@@ -61,17 +65,26 @@ def main() -> None:
             except Exception as e:
                 print(f"Unexpected error: {e}")
 
-        elif cmd == "ask":
+        elif cmd in ("ask", "summarize"):
             if not arg:
-                print("Usage: ask <your question>")
+                print(f"Usage: {cmd} <your question>")
                 continue
+            k = 100 if cmd == "summarize" else 20
             try:
-                result = agent.query(arg)
-                print(f"\n{result['answer']}")
-                if result["sources"]:
-                    print("\nSources:")
-                    for src in result["sources"]:
-                        print(f"  • {src}")
+                print()
+                for event in agent.stream_query(arg, k=k):
+                    if event["type"] == "status":
+                        print(f"[{event['message']}]", flush=True)
+                    elif event["type"] == "chunk":
+                        print(event["text"], end="", flush=True)
+                    elif event["type"] == "done":
+                        print("\n")
+                        if event["sources"]:
+                            print("Sources:")
+                            for src in event["sources"]:
+                                print(f"  * {src}")
+                    elif event["type"] == "error":
+                        print(f"\nError: {event['message']}")
             except Exception as e:
                 print(f"Error: {e}")
 
@@ -80,9 +93,19 @@ def main() -> None:
             if docs:
                 print("Indexed documents:")
                 for doc in docs:
-                    print(f"  • {doc}")
+                    print(f"  * {doc}")
             else:
                 print("No documents indexed yet. Use 'upload <path>' to add one.")
+
+        elif cmd == "remove":
+            if not arg:
+                print("Usage: remove <filename>")
+                continue
+            deleted = agent.delete_document(arg)
+            if deleted:
+                print(f"Removed {deleted} chunks for '{arg}'.")
+            else:
+                print(f"No document found with name '{arg}'.")
 
         elif cmd in ("help", "?"):
             print_help()
